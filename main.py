@@ -1,30 +1,65 @@
+import tkinter as tk
 from jikanpy import Jikan
-jikan = Jikan()
 
-print("Welcome to my Anime Season Checker, where you can check which anime are airing for a specific season.")
-print("To begin, select if you would like to check the current, upcoming, or a specific season.")
+class AnimeSeasonCheckerApp:
+    def __init__(self, master):
+        self.master = master
+        master.title("Anime Season Checker")
 
-# Ask the user for their choice
-choice = input("Enter 'current', 'upcoming', or 'specific': ").lower()
+        self.jikan = Jikan()
 
-if choice == 'current':
-    season_info = jikan.seasons(extension='now')
-elif choice == 'upcoming':
-    season_info = jikan.seasons(extension='upcoming')
-elif choice == 'specific':
-    year = int(input("Enter the year: "))
-    season = input("Enter the season (spring/summer/winter/fall): ").lower()
-    season_info = jikan.seasons(year=year, season=season)
-else:
-    print("Invalid choice. Please enter 'current', 'upcoming', or 'specific'.")
+        # Create labels, entry fields, and buttons for GUI
+        self.choice_var = tk.StringVar()
+        self.choice_var.set('current')
+        self.choices = ['current', 'upcoming', 'specific']
+        self.choice_label = tk.Label(master, text="Select season:")
+        self.choice_label.pack()
+        self.choice_menu = tk.OptionMenu(master, self.choice_var, *self.choices)
+        self.choice_menu.pack()
 
-if 'data' in season_info:
-    # Extract titles from the response
-    titles = [anime['title'] for anime in season_info['data']]
-    
-    # Print the titles
-    print("\nAnime titles for the selected season:")
-    for title in titles:
-        print(title)
-else:
-    print("No anime information found for the selected season.")
+        self.year_label = tk.Label(master, text="Enter the year:")
+        self.year_label.pack()
+        self.year_entry = tk.Entry(master)
+        self.year_entry.pack()
+
+        self.season_label = tk.Label(master, text="Enter the season (spring/summer/winter/fall):")
+        self.season_label.pack()
+        self.season_entry = tk.Entry(master)
+        self.season_entry.pack()
+
+        self.fetch_button = tk.Button(master, text="Fetch Anime", command=self.fetch_seasonal_anime)
+        self.fetch_button.pack()
+
+        # Create a listbox to display anime titles
+        self.anime_listbox = tk.Listbox(master)
+        self.anime_listbox.pack(fill=tk.BOTH, expand=True)
+
+    def fetch_seasonal_anime(self):
+        choice = self.choice_var.get()
+        if choice == 'current':
+            season_info = self.jikan.seasons(extension='now')
+        elif choice == 'upcoming':
+            season_info = self.jikan.seasons(extension='upcoming')
+        elif choice == 'specific':
+            year = int(self.year_entry.get())
+            season = self.season_entry.get().lower()
+            season_info = self.jikan.seasons(year=year, season=season)
+        else:
+            # Handle invalid choice
+            return
+        
+        self.anime_listbox.delete(0, tk.END)
+        if 'data' in season_info:
+            titles = [anime['title'] for anime in season_info['data']]
+            for title in titles:
+                self.anime_listbox.insert(tk.END, title)
+        else:
+            self.anime_listbox.insert(tk.END, "No anime information found for the selected season.")
+
+def main():
+    root = tk.Tk()
+    app = AnimeSeasonCheckerApp(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
